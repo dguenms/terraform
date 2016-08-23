@@ -3,7 +3,6 @@ package terraform
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"reflect"
 	"sort"
 	"strings"
@@ -2678,6 +2677,63 @@ func TestContext2Apply_destroy(t *testing.T) {
 	}
 }
 
+// https://github.com/hashicorp/terraform/issues/2767
+func TestContext2Apply_destroyModulePrefix(t *testing.T) {
+	m := testModule(t, "apply-destroy-module-resource-prefix")
+	h := new(MockHook)
+	p := testProvider("aws")
+	p.ApplyFn = testApplyFn
+	p.DiffFn = testDiffFn
+	ctx := testContext2(t, &ContextOpts{
+		Module: m,
+		Hooks:  []Hook{h},
+		Providers: map[string]ResourceProviderFactory{
+			"aws": testProviderFuncFixed(p),
+		},
+	})
+
+	// First plan and apply a create operation
+	if _, err := ctx.Plan(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	state, err := ctx.Apply()
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	// Verify that we got the apply info correct
+	if v := h.PreApplyInfo.HumanId(); v != "module.child.aws_instance.foo" {
+		t.Fatalf("bad: %s", v)
+	}
+
+	// Next, plan and apply a destroy operation and reset the hook
+	h = new(MockHook)
+	ctx = testContext2(t, &ContextOpts{
+		Destroy: true,
+		State:   state,
+		Module:  m,
+		Hooks:   []Hook{h},
+		Providers: map[string]ResourceProviderFactory{
+			"aws": testProviderFuncFixed(p),
+		},
+	})
+
+	if _, err := ctx.Plan(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	state, err = ctx.Apply()
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	// Test that things were destroyed
+	if v := h.PreApplyInfo.HumanId(); v != "module.child.aws_instance.foo" {
+		t.Fatalf("bad: %s", v)
+	}
+}
+
 func TestContext2Apply_destroyNestedModule(t *testing.T) {
 	m := testModule(t, "apply-destroy-nested-module")
 	p := testProvider("aws")
@@ -4314,13 +4370,9 @@ func TestContext2Apply_vars(t *testing.T) {
 
 func TestContext2Apply_varsEnv(t *testing.T) {
 	// Set the env var
-	old_ami := tempEnv(t, "TF_VAR_ami", "baz")
-	old_list := tempEnv(t, "TF_VAR_list", `["Hello", "World"]`)
-	old_map := tempEnv(t, "TF_VAR_map", `{"Hello" = "World", "Foo" = "Bar", "Baz" = "Foo"}`)
-
-	defer os.Setenv("TF_VAR_ami", old_ami)
-	defer os.Setenv("TF_VAR_list", old_list)
-	defer os.Setenv("TF_VAR_list", old_map)
+	defer tempEnv(t, "TF_VAR_ami", "baz")()
+	defer tempEnv(t, "TF_VAR_list", `["Hello", "World"]`)()
+	defer tempEnv(t, "TF_VAR_map", `{"Hello" = "World", "Foo" = "Bar", "Baz" = "Foo"}`)()
 
 	m := testModule(t, "apply-vars-env")
 	p := testProvider("aws")

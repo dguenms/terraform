@@ -15,6 +15,16 @@ resources.
 ## Example Usage
 
 ```
+resource "aws_alb_target_group" "test" {
+  name     = "tf-example-alb-tg"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = "${aws_vpc.main.id}"
+}
+
+resource "aws_vpc" "main" {
+    cidr_block = "10.0.0.0/16"
+}
 ```
 
 ## Argument Reference
@@ -49,7 +59,8 @@ Health Check Blocks (`health_check`) support the following:
 
 The following attributes are exported in addition to the arguments listed above:
 
-* `id` - The ARN of the target group.
+* `id` - The ARN of the Target Group (matches `arn`)
+* `arn` - The ARN of the Target Group (matches `id`)
 
 ## Import
 

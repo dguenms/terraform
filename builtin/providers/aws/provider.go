@@ -153,7 +153,10 @@ func Provider() terraform.ResourceProvider {
 
 		ResourcesMap: map[string]*schema.Resource{
 			"aws_alb":                                      resourceAwsAlb(),
+			"aws_alb_listener":                             resourceAwsAlbListener(),
+			"aws_alb_listener_rule":                        resourceAwsAlbListenerRule(),
 			"aws_alb_target_group":                         resourceAwsAlbTargetGroup(),
+			"aws_alb_target_group_attachment":              resourceAwsAlbTargetGroupAttachment(),
 			"aws_ami":                                      resourceAwsAmi(),
 			"aws_ami_copy":                                 resourceAwsAmiCopy(),
 			"aws_ami_from_instance":                        resourceAwsAmiFromInstance(),
@@ -161,7 +164,9 @@ func Provider() terraform.ResourceProvider {
 			"aws_api_gateway_account":                      resourceAwsApiGatewayAccount(),
 			"aws_api_gateway_api_key":                      resourceAwsApiGatewayApiKey(),
 			"aws_api_gateway_authorizer":                   resourceAwsApiGatewayAuthorizer(),
+			"aws_api_gateway_base_path_mapping":            resourceAwsApiGatewayBasePathMapping(),
 			"aws_api_gateway_deployment":                   resourceAwsApiGatewayDeployment(),
+			"aws_api_gateway_domain_name":                  resourceAwsApiGatewayDomainName(),
 			"aws_api_gateway_integration":                  resourceAwsApiGatewayIntegration(),
 			"aws_api_gateway_integration_response":         resourceAwsApiGatewayIntegrationResponse(),
 			"aws_api_gateway_method":                       resourceAwsApiGatewayMethod(),

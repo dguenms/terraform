@@ -42,6 +42,14 @@ func resourceAwsElasticacheReplicationGroup() *schema.Resource {
 		ForceNew: true,
 	}
 
+	resourceSchema["primary_endpoint_address"] = &schema.Schema{
+		Type:     schema.TypeString,
+		Computed: true,
+	}
+
+	resourceSchema["engine"].Required = false
+	resourceSchema["engine"].Optional = true
+	resourceSchema["engine"].Default = "redis"
 	resourceSchema["engine"].ValidateFunc = validateAwsElastiCacheReplicationGroupEngine
 
 	return &schema.Resource{
@@ -211,6 +219,8 @@ func resourceAwsElasticacheReplicationGroupRead(d *schema.ResourceData, meta int
 		d.Set("maintenance_window", c.PreferredMaintenanceWindow)
 		d.Set("snapshot_window", c.SnapshotWindow)
 		d.Set("snapshot_retention_limit", c.SnapshotRetentionLimit)
+
+		d.Set("primary_endpoint_address", rgp.NodeGroups[0].PrimaryEndpoint.Address)
 
 	}
 
@@ -396,15 +406,14 @@ func validateAwsElastiCacheReplicationGroupEngine(v interface{}, k string) (ws [
 	if strings.ToLower(v.(string)) != "redis" {
 		errors = append(errors, fmt.Errorf("The only acceptable Engine type when using Replication Groups is Redis"))
 	}
-
 	return
 }
 
 func validateAwsElastiCacheReplicationGroupId(v interface{}, k string) (ws []string, errors []error) {
 	value := v.(string)
-	if (len(value) < 1) || (len(value) > 20) {
+	if (len(value) < 1) || (len(value) > 16) {
 		errors = append(errors, fmt.Errorf(
-			"%q must contain from 1 to 20 alphanumeric characters or hyphens", k))
+			"%q must contain from 1 to 16 alphanumeric characters or hyphens", k))
 	}
 	if !regexp.MustCompile(`^[0-9a-zA-Z-]+$`).MatchString(value) {
 		errors = append(errors, fmt.Errorf(
